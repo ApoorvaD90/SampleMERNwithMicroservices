@@ -73,7 +73,7 @@ pipeline {
                         credentialsId: 'aws-credentials-apoorva']]) {
         sh """
           aws sns publish --region ${AWS_REGION} \
-            --topic-arn ${SNS_TOPIC_ARN} \
+            --topic-arn ${SNS_TOPIC_ARN_APOORVA} \
             --subject 'Jenkins Build SUCCESS' \
             --message 'Build ${IMAGE_TAG} deployed successfully to EKS.'
         """
@@ -85,7 +85,7 @@ pipeline {
                         credentialsId: 'aws-credentials-apoorva']]) {
         sh """
           aws sns publish --region ${AWS_REGION} \
-            --topic-arn ${SNS_TOPIC_ARN} \
+            --topic-arn ${SNS_TOPIC_ARN_APOORVA} \
             --subject 'Jenkins Build FAILED' \
             --message 'Build ${IMAGE_TAG} FAILED. Check Jenkins console for details.'
         """
