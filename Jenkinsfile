@@ -47,19 +47,21 @@ pipeline {
     }}
     stage('Deploy to EKS') { steps {
       withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
-                        credentialsId: 'aws-credentials-apoorva'],
-                       [string(credentialsId: 'INGRESS_HOST', variable: 'INGRESS_HOST')]]) {
-        sh """
-          aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER_NAME}
-          helm upgrade --install streaming-app ./helm/streaming-app \\
-            --namespace streaming-app --create-namespace \\
-            --set global.imageRegistry=${ECR_REGISTRY} \\
-            --set helloService.image.tag=${IMAGE_TAG} \\
-            --set profileService.image.tag=${IMAGE_TAG} \\
-            --set frontend.image.tag=${IMAGE_TAG} \\
-            --set ingress.host=${INGRESS_HOST} \\
-            --wait --timeout 5m
-        """
+                        credentialsId: 'aws-credentials-apoorva']]) {
+        withCredentials([string(credentialsId: 'INGRESS_HOST', variable: 'INGRESS_HOST')]) {
+          sh """
+            aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER_NAME}
+            helm upgrade --install streaming-app ./helm/streaming-app \\
+              --namespace streaming-app --create-namespace \\
+              --set global.imageRegistry=${ECR_REGISTRY} \\
+              --set helloService.image.tag=${IMAGE_TAG} \\
+              --set profileService.image.tag=${IMAGE_TAG} \\
+              --set frontend.image.tag=${IMAGE_TAG} \\
+              --set ingress.host=\${INGRESS_HOST} \\
+              --set mongodb.persistence.enabled=false \\
+              --wait --timeout 5m
+          """
+        }
       }
     }}
   }
