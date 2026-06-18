@@ -8,7 +8,7 @@ pipeline {
     HELLO_REPO       = 'streaming-app/helloservice'
     PROFILE_REPO     = 'streaming-app/profileservice'
     FRONTEND_REPO    = 'streaming-app/frontend'
-    SNS_TOPIC_ARN    = 'arn:aws:sns:us-east-1:024757002386:streaming-app-deployments'
+    SNS_TOPIC_ARN_APOORVA = 'arn:aws:sns:us-east-1:024757002386:streaming-app-deployments'
   }
   stages {
     stage('Checkout') { steps { checkout scm } }
