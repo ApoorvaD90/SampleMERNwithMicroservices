@@ -1,0 +1,21 @@
+global:
+  imageRegistry: "024757002386.dkr.ecr.us-east-1.amazonaws.com"
+
+helloService:
+  image:
+    tag: "v1.0.0"
+
+profileService:
+  image:
+    tag: "v1.0.0"
+
+frontend:
+  image:
+    tag: "v1.0.0"
+
+ingress:
+  host: "ab848443a5b3a452aba8765e31e8bb37-1377079175.us-east-1.elb.amazonaws.com"
+
+mongodb:
+  persistence:
+    enabled: false

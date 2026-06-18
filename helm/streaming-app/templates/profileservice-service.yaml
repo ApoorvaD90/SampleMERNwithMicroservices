@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "streaming-app.fullname" . }}-profileservice
+  labels:
+    {{- include "streaming-app.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.profileService.service.type }}
+  ports:
+    - port: {{ .Values.profileService.service.port }}
+      targetPort: {{ .Values.profileService.port }}
+  selector:
+    {{- include "streaming-app.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: profileservice

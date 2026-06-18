@@ -1,0 +1,30 @@
+global:
+  imageRegistry: ""   # set to your ECR registry URL
+helloService:
+  image: { repository: streaming-app/helloservice, tag: latest, pullPolicy: Always }
+  replicas: 2
+  port: 3001
+  service: { type: ClusterIP, port: 3001 }
+  hpa: { enabled: true, minReplicas: 2, maxReplicas: 10, targetCPUUtilizationPercentage: 70 }
+profileService:
+  image: { repository: streaming-app/profileservice, tag: latest, pullPolicy: Always }
+  replicas: 2
+  port: 3002
+  service: { type: ClusterIP, port: 3002 }
+  mongodb: { url: "" }   # empty = use in-cluster MongoDB
+  hpa: { enabled: true, minReplicas: 2, maxReplicas: 10, targetCPUUtilizationPercentage: 70 }
+frontend:
+  image: { repository: streaming-app/frontend, tag: latest, pullPolicy: Always }
+  replicas: 2
+  port: 80
+  service: { type: ClusterIP, port: 80 }
+  hpa: { enabled: true, minReplicas: 2, maxReplicas: 10, targetCPUUtilizationPercentage: 70 }
+mongodb:
+  enabled: true
+  image: { repository: mongo, tag: "6" }
+  port: 27017
+  persistence: { enabled: true, size: 1Gi }
+ingress:
+  enabled: true
+  className: nginx
+  host: streaming-app.example.com

@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "streaming-app.fullname" . }}-profileservice
+  labels:
+    {{- include "streaming-app.labels" . | nindent 4 }}
+    app.kubernetes.io/component: profileservice
+spec:
+  replicas: {{ .Values.profileService.replicas }}
+  selector:
+    matchLabels:
+      {{- include "streaming-app.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: profileservice
+  template:
+    metadata:
+      labels:
+        {{- include "streaming-app.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: profileservice
+    spec:
+      containers:
+        - name: profileservice
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.profileService.image.repository }}:{{ .Values.profileService.image.tag }}"
+          imagePullPolicy: {{ .Values.profileService.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.profileService.port }}
+          env:
+            - name: PORT
+              value: "{{ .Values.profileService.port }}"
+            - name: MONGO_URL
+              value: {{ include "streaming-app.mongoUrl" . | quote }}
+          livenessProbe:
+            httpGet: { path: /health, port: {{ .Values.profileService.port }} }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: /health, port: {{ .Values.profileService.port }} }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.profileService.resources | nindent 12 }}

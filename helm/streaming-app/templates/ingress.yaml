@@ -1,0 +1,35 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "streaming-app.fullname" . }}-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+          - path: /api/hello(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ include "streaming-app.fullname" . }}-helloservice
+                port:
+                  number: {{ .Values.helloService.service.port }}
+          - path: /api/profile(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ include "streaming-app.fullname" . }}-profileservice
+                port:
+                  number: {{ .Values.profileService.service.port }}
+          - path: /()(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ include "streaming-app.fullname" . }}-frontend
+                port:
+                  number: {{ .Values.frontend.service.port }}
+{{- end }}

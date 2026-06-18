@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
+const HELLO_URL = process.env.REACT_APP_HELLO_URL || "http://localhost:3001";
+const PROFILE_URL = process.env.REACT_APP_PROFILE_URL || "http://localhost:3002";
+
 function Home() {
   const [message, setMessage] = useState("");
   const [profile, setProfile] = useState([]);
 
   useEffect(() => {
     axios
-      .get("http://localhost:3001/")
+      .get(`${HELLO_URL}/`)
       .then((response) => {
         setMessage(response.data.msg);
       })
@@ -16,7 +19,7 @@ function Home() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:3002/fetchUser")
+      .get(`${PROFILE_URL}/fetchUser`)
       .then((response) => {
         setProfile(response.data);
         

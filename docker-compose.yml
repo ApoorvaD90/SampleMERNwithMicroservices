@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:6
+    container_name: streaming-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  helloservice:
+    build: ./backend/helloService
+    container_name: streaming-helloservice
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+    restart: unless-stopped
+
+  profileservice:
+    build: ./backend/profileService
+    container_name: streaming-profileservice
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - MONGO_URL=mongodb://mongodb:27017/streaming_app
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        - REACT_APP_HELLO_URL=http://localhost:3001
+        - REACT_APP_PROFILE_URL=http://localhost:3002
+    container_name: streaming-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - helloservice
+      - profileservice
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:

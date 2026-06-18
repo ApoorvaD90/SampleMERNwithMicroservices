@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "streaming-app.fullname" . }}-helloservice
+  labels:
+    {{- include "streaming-app.labels" . | nindent 4 }}
+    app.kubernetes.io/component: helloservice
+spec:
+  replicas: {{ .Values.helloService.replicas }}
+  selector:
+    matchLabels:
+      {{- include "streaming-app.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: helloservice
+  template:
+    metadata:
+      labels:
+        {{- include "streaming-app.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: helloservice
+    spec:
+      containers:
+        - name: helloservice
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.helloService.image.repository }}:{{ .Values.helloService.image.tag }}"
+          imagePullPolicy: {{ .Values.helloService.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.helloService.port }}
+          env:
+            - name: PORT
+              value: "{{ .Values.helloService.port }}"
+          livenessProbe:
+            httpGet: { path: /health, port: {{ .Values.helloService.port }} }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: /health, port: {{ .Values.helloService.port }} }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.helloService.resources | nindent 12 }}
