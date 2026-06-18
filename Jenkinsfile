@@ -78,6 +78,13 @@ pipeline {
             --message 'Build ${IMAGE_TAG} deployed successfully to EKS.'
         """
       }
+      withCredentials([string(credentialsId: 'SLACK_WEBHOOK_URL', variable: 'SLACK_WEBHOOK_URL')]) {
+        sh """
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"✅ Build ${IMAGE_TAG} deployed successfully to EKS."}' \
+            \${SLACK_WEBHOOK_URL}
+        """
+      }
       echo "Build ${IMAGE_TAG} deployed successfully."
     }
     failure {
@@ -88,6 +95,13 @@ pipeline {
             --topic-arn ${SNS_TOPIC_ARN_APOORVA} \
             --subject 'Jenkins Build FAILED' \
             --message 'Build ${IMAGE_TAG} FAILED. Check Jenkins console for details.'
+        """
+      }
+      withCredentials([string(credentialsId: 'SLACK_WEBHOOK_URL', variable: 'SLACK_WEBHOOK_URL')]) {
+        sh """
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"❌ Build ${IMAGE_TAG} FAILED. Check Jenkins console for details."}' \
+            \${SLACK_WEBHOOK_URL}
         """
       }
       echo "Build ${IMAGE_TAG} FAILED."
