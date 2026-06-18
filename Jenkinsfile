@@ -2,7 +2,7 @@ pipeline {
   agent any
   environment {
     AWS_REGION       = 'us-east-1'
-    ECR_REGISTRY     = "${AWS_ACCOUNT_ID_APOORVA}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+    ECR_REGISTRY     = "024757002386.dkr.ecr.us-east-1.amazonaws.com"
     EKS_CLUSTER_NAME = 'streaming-app-cluster'
     IMAGE_TAG        = "${env.BUILD_NUMBER}"
     HELLO_REPO       = 'streaming-app/helloservice'
@@ -47,7 +47,7 @@ pipeline {
     }}
     stage('Deploy to EKS') { steps {
       withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
-                        credentialsId: 'aws-credentials'],
+                        credentialsId: 'aws-credentials-apoorva'],
                        [string(credentialsId: 'INGRESS_HOST', variable: 'INGRESS_HOST')]]) {
         sh """
           aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER_NAME}
