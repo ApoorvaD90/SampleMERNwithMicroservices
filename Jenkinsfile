@@ -8,6 +8,7 @@ pipeline {
     HELLO_REPO       = 'streaming-app/helloservice'
     PROFILE_REPO     = 'streaming-app/profileservice'
     FRONTEND_REPO    = 'streaming-app/frontend'
+    SNS_TOPIC_ARN    = 'arn:aws:sns:us-east-1:024757002386:streaming-app-deployments'
   }
   stages {
     stage('Checkout') { steps { checkout scm } }
@@ -67,8 +68,30 @@ pipeline {
   }
 
   post {
-    success { echo "Build ${IMAGE_TAG} deployed successfully." }
-    failure { echo "Build ${IMAGE_TAG} FAILED." }
+    success {
+      withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: 'aws-credentials-apoorva']]) {
+        sh """
+          aws sns publish --region ${AWS_REGION} \
+            --topic-arn ${SNS_TOPIC_ARN} \
+            --subject 'Jenkins Build SUCCESS' \
+            --message 'Build ${IMAGE_TAG} deployed successfully to EKS.'
+        """
+      }
+      echo "Build ${IMAGE_TAG} deployed successfully."
+    }
+    failure {
+      withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: 'aws-credentials-apoorva']]) {
+        sh """
+          aws sns publish --region ${AWS_REGION} \
+            --topic-arn ${SNS_TOPIC_ARN} \
+            --subject 'Jenkins Build FAILED' \
+            --message 'Build ${IMAGE_TAG} FAILED. Check Jenkins console for details.'
+        """
+      }
+      echo "Build ${IMAGE_TAG} FAILED."
+    }
     always  { sh "docker system prune -f || true" }
   }
 }
