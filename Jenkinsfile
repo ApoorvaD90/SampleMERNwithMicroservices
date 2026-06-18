@@ -7,10 +7,8 @@ pipeline {
     IMAGE_TAG        = "${env.BUILD_NUMBER}"
     HELLO_REPO       = 'streaming-app/helloservice'
     PROFILE_REPO     = 'streaming-app/profileservice'
-
-  }
-
     FRONTEND_REPO    = 'streaming-app/frontend'
+  }
   stages {
     stage('Checkout') { steps { checkout scm } }
     stage('Build Docker Images') {
