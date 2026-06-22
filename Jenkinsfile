@@ -1,24 +1,24 @@
 pipeline {
   agent any
   environment {
-    AWS_REGION       = 'us-east-1'
-    ECR_REGISTRY     = "024757002386.dkr.ecr.us-east-1.amazonaws.com"
-    EKS_CLUSTER_NAME = 'streaming-app-cluster'
-    IMAGE_TAG        = "${env.BUILD_NUMBER}"
-    HELLO_REPO       = 'streaming-app/helloservice'
-    PROFILE_REPO     = 'streaming-app/profileservice'
-    FRONTEND_REPO    = 'streaming-app/frontend'
-    SNS_TOPIC_ARN_APOORVA = 'arn:aws:sns:us-east-1:024757002386:streaming-app-deployments'
+    AWS_REGION            = 'us-east-1'
+    ECR_REGISTRY_APOORVA  = credentials('ECR_REGISTRY_APOORVA')
+    EKS_CLUSTER_NAME_APOORVA  = credentials('EKS_CLUSTER_NAME_APOORVA')
+    SNS_TOPIC_ARN_APOORVA = credentials('SNS_TOPIC_ARN_APOORVA')
+    IMAGE_TAG             = "${env.BUILD_NUMBER}"
+    HELLO_REPO            = 'streaming-app/helloservice'
+    PROFILE_REPO          = 'streaming-app/profileservice'
+    FRONTEND_REPO         = 'streaming-app/frontend'
   }
   stages {
     stage('Checkout') { steps { checkout scm } }
     stage('Build Docker Images') {
       parallel {
         stage('helloService') { steps {
-          sh "docker build -t ${ECR_REGISTRY}/${HELLO_REPO}:${IMAGE_TAG} ./backend/helloService"
+          sh "docker build -t ${ECR_REGISTRY_APOORVA}/${HELLO_REPO}:${IMAGE_TAG} ./backend/helloService"
         }}
         stage('profileService') { steps {
-          sh "docker build -t ${ECR_REGISTRY}/${PROFILE_REPO}:${IMAGE_TAG} ./backend/profileService"
+          sh "docker build -t ${ECR_REGISTRY_APOORVA}/${PROFILE_REPO}:${IMAGE_TAG} ./backend/profileService"
         }}
         stage('Frontend') { steps {
           withCredentials([string(credentialsId: 'INGRESS_HOST', variable: 'INGRESS_HOST')]) {
@@ -26,7 +26,7 @@ pipeline {
               docker build \\
                 --build-arg REACT_APP_HELLO_URL=http://${INGRESS_HOST}/api/hello \\
                 --build-arg REACT_APP_PROFILE_URL=http://${INGRESS_HOST}/api/profile \\
-                -t ${ECR_REGISTRY}/${FRONTEND_REPO}:${IMAGE_TAG} ./frontend
+                -t ${ECR_REGISTRY_APOORVA}/${FRONTEND_REPO}:${IMAGE_TAG} ./frontend
             """
           }
         }}
@@ -37,12 +37,12 @@ pipeline {
                         credentialsId: 'aws-credentials-apoorva']]) {
         sh """
           aws ecr get-login-password --region ${AWS_REGION} | \\
-            docker login --username AWS --password-stdin ${ECR_REGISTRY}
-          docker push ${ECR_REGISTRY}/${HELLO_REPO}:${IMAGE_TAG}
-          docker push ${ECR_REGISTRY}/${PROFILE_REPO}:${IMAGE_TAG}
-          docker push ${ECR_REGISTRY}/${FRONTEND_REPO}:${IMAGE_TAG}
-          docker tag ${ECR_REGISTRY}/${HELLO_REPO}:${IMAGE_TAG} ${ECR_REGISTRY}/${HELLO_REPO}:latest
-          docker push ${ECR_REGISTRY}/${HELLO_REPO}:latest
+            docker login --username AWS --password-stdin ${ECR_REGISTRY_APOORVA}
+          docker push ${ECR_REGISTRY_APOORVA}/${HELLO_REPO}:${IMAGE_TAG}
+          docker push ${ECR_REGISTRY_APOORVA}/${PROFILE_REPO}:${IMAGE_TAG}
+          docker push ${ECR_REGISTRY_APOORVA}/${FRONTEND_REPO}:${IMAGE_TAG}
+          docker tag ${ECR_REGISTRY_APOORVA}/${HELLO_REPO}:${IMAGE_TAG} ${ECR_REGISTRY_APOORVA}/${HELLO_REPO}:latest
+          docker push ${ECR_REGISTRY_APOORVA}/${HELLO_REPO}:latest
         """
       }
     }}
@@ -51,10 +51,10 @@ pipeline {
                         credentialsId: 'aws-credentials-apoorva']]) {
         withCredentials([string(credentialsId: 'INGRESS_HOST', variable: 'INGRESS_HOST')]) {
           sh """
-            aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER_NAME}
+            aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER_NAME_APOORVA}
             helm upgrade --install streaming-app ./helm/streaming-app \\
               --namespace streaming-app --create-namespace \\
-              --set global.imageRegistry=${ECR_REGISTRY} \\
+              --set global.imageRegistry=${ECR_REGISTRY_APOORVA} \\
               --set helloService.image.tag=${IMAGE_TAG} \\
               --set profileService.image.tag=${IMAGE_TAG} \\
               --set frontend.image.tag=${IMAGE_TAG} \\
