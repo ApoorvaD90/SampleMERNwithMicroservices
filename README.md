@@ -1,27 +1,48 @@
-# Sample MERN with Microservices
+flowchart TD
+    DEV["💻 Developer Workstation"]
+    GH["🐙 GitHub Repository\nyour-username/StreamingApp"]
+    JK["🔧 Jenkins CI/CD\njenkinsacademics.herovired.com"]
+    ECR["📦 AWS ECR\nhelloservice · profileservice · frontend"]
+    CW["📊 AWS CloudWatch"]
+    SNS["🔔 AWS SNS Topic"]
+    EMAIL["📧 Email Notifications"]
 
+    DEV -->|"git push"| GH
+    GH -->|"webhook on push"| JK
+    JK -->|"docker push :BUILD_NUM"| ECR
+    JK -->|"helm upgrade --install"| NGC
 
+    subgraph EKS["☁️ AWS EKS Cluster · streaming-app-cluster · us-east-1"]
 
-For `helloService`, create `.env` file with the content:
-```bash
-PORT=3001
-```
+        subgraph ING["Namespace: ingress-nginx"]
+            ELB[/"🌐 AWS Elastic Load Balancer — INGRESS_HOST"/]
+            NGC["nginx Ingress Controller"]
+            ELB --> NGC
+        end
 
-For `profileService`, create `.env` file with the content:
-```bash
-PORT=3002
-MONGO_URL="specifyYourMongoURLHereWithDatabaseNameInTheEnd"
-```
+        subgraph APP["Namespace: streaming-app"]
+            HELLO["helloService\nDeployment · port 3001\nreplicas: 2 · HPA max: 10"]
+            PROFILE["profileService\nDeployment · port 3002\nreplicas: 2 · HPA max: 10"]
+            FRONT["Frontend — React + nginx\nDeployment · port 80\nreplicas: 2 · HPA max: 10"]
+            MONGO[("MongoDB\nport 27017\n1Gi EBS PVC")]
 
-Finally install packages in both the services by running the command `npm install`.
+            NGC -->|"/api/hello"| HELLO
+            NGC -->|"/api/profile"| PROFILE
+            NGC -->|"/"| FRONT
+            PROFILE -->|"MONGO_URL"| MONGO
+        end
 
-<br/>
-For frontend, you have to install and start the frontend server:
+        subgraph MON["Namespace: amazon-cloudwatch"]
+            CWA["CloudWatch Agent — DaemonSet\nship metrics"]
+            FB["Fluent Bit — DaemonSet\nship logs"]
+        end
 
-```bash
-cd frontend
-npm install
-npm start
-```
+    end
 
-Note: This will run the frontend in the development server. To run in production, build the application by running the command `npm run build`
+    ECR -->|"imagePull"| HELLO
+    ECR -->|"imagePull"| PROFILE
+    ECR -->|"imagePull"| FRONT
+    CWA -->|"pod metrics"| CW
+    FB -->|"container logs"| CW
+    CW -->|"CPU > 80% alarm"| SNS
+    SNS -->|"email subscription"| EMAIL
